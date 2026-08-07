@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: trade_data_pipeline
+    database: trade_data_pipeline
+    schema: public
+    tables:
+      - name: raw_trades
+
+models:
+  - name: stg_raw_trades
+    description: "Staging model for raw trade records loaded from Snowflake."
+  - name: valid_trades
+    description: "Validated trade records with status and latest version selection."
+  - name: rejected_trades
+    description: "Rejected trade records with rejection reasons."

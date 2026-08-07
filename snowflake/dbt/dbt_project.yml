@@ -1,0 +1,13 @@
+name: trade_data_pipeline
+version: '1.0'
+config-version: 2
+
+profile: trade_data_pipeline
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target"]
+
+models:
+  trade_data_pipeline:
+    +materialized: table
