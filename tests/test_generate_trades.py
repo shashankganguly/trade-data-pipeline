@@ -1,7 +1,5 @@
 import csv
 import importlib.util
-import json
-import tempfile
 from pathlib import Path
 
 
@@ -81,25 +79,3 @@ def test_write_csv_creates_header_and_rows(tmp_path):
     ]
     assert rows[0]["symbol"] == "CSV"
 
-
-def test_write_json_outputs_valid_json(tmp_path):
-    trades = list(
-        generate_trades.generate_trades(
-            count=2,
-            symbols=["JSON"],
-            min_quantity=2,
-            max_quantity=2,
-            min_price=30.0,
-            max_price=30.0,
-        )
-    )
-    output_file = tmp_path / "trades.json"
-    generate_trades.write_json(trades, output_file)
-
-    assert output_file.exists()
-    content = json.loads(output_file.read_text(encoding="utf-8"))
-    assert isinstance(content, list)
-    assert len(content) == 2
-    assert content[0]["symbol"] == "JSON"
-    assert content[0]["quantity"] == 2
-    assert content[0]["price"] == 30.0

@@ -1,14 +1,13 @@
 """Generate synthetic trade data for the ingestion pipeline.
 
-This script produces a configurable number of simulated trade records and can
-write them to stdout or to a file in CSV or JSON format.
+This script produces a configurable number of simulated trade records and writes
+CSV payloads for Snowflake ingestion.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import json
 import random
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
@@ -61,12 +60,6 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Path to output file. If omitted, data is written to stdout.",
-    )
-    parser.add_argument(
-        "--format",
-        choices=["csv", "json"],
-        default="csv",
-        help="Output format for generated trade data.",
     )
     parser.add_argument(
         "--seed",
@@ -165,11 +158,6 @@ def write_csv(trades: Iterable[Trade], output_file: Path) -> None:
             writer.writerow(asdict(trade))
 
 
-def write_json(trades: Iterable[Trade], output_file: Path) -> None:
-    with output_file.open("w", encoding="utf-8") as json_file:
-        json.dump([asdict(trade) for trade in trades], json_file, indent=2)
-
-
 def print_csv(trades: Iterable[Trade]) -> None:
     fieldnames = [
         "trade_id",
@@ -194,10 +182,6 @@ def print_csv(trades: Iterable[Trade]) -> None:
     writer.writeheader()
     for trade in trades:
         writer.writerow(asdict(trade))
-
-
-def print_json(trades: Iterable[Trade]) -> None:
-    print(json.dumps([asdict(trade) for trade in trades], indent=2))
 
 
 def main() -> None:
@@ -225,15 +209,10 @@ def main() -> None:
     )
 
     if args.output:
-        if args.format == "csv":
-            write_csv(trades, args.output)
-        else:
-            write_json(trades, args.output)
+        write_csv(trades, args.output)
         print(f"Generated {len(trades)} trades and wrote to {args.output}")
-    elif args.format == "csv":
-        print_csv(trades)
     else:
-        print_json(trades)
+        print_csv(trades)
 
 
 if __name__ == "__main__":
