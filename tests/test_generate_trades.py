@@ -35,6 +35,12 @@ def test_generate_trades_count_and_fields():
         assert trade.side in generate_trades.DEFAULT_SIDES
         assert trade.venue in generate_trades.DEFAULT_VENUES
         assert isinstance(trade.timestamp, str)
+        assert isinstance(trade.version, int)
+        assert isinstance(trade.maturity_date, str)
+        assert isinstance(trade.status, str)
+        assert trade.rejection_reason in {None, ""}
+        assert isinstance(trade.source_file, str)
+        assert isinstance(trade.load_ts, str)
 
 
 def test_write_csv_creates_header_and_rows(tmp_path):
@@ -66,6 +72,12 @@ def test_write_csv_creates_header_and_rows(tmp_path):
         "price",
         "currency",
         "venue",
+        "version",
+        "maturity_date",
+        "status",
+        "rejection_reason",
+        "source_file",
+        "load_ts",
     ]
     assert rows[0]["symbol"] == "CSV"
 

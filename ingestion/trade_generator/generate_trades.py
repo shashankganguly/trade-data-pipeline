@@ -32,6 +32,12 @@ class Trade:
     price: float
     currency: str
     venue: str
+    version: int
+    maturity_date: str
+    status: str
+    rejection_reason: str | None
+    source_file: str
+    load_ts: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -111,6 +117,11 @@ def generate_trades(
     start_time = datetime.utcnow()
     for index in range(1, count + 1):
         symbol = random.choice(symbols)
+        version = random.randint(1, 9)
+        maturity_offset_days = random.randint(1, 365)
+        maturity_date = (datetime.utcnow().date() + timedelta(days=maturity_offset_days)).isoformat()
+        status = random.choice(["ACTIVE", "EXPIRED"])
+        load_ts = (start_time + timedelta(seconds=index * random.randint(1, 5))).isoformat(timespec="seconds")
         trade = Trade(
             trade_id=f"T{index:08d}",
             timestamp=generate_trade_timestamp(index, start_time),
@@ -120,12 +131,33 @@ def generate_trades(
             price=round(random.uniform(min_price, max_price), 2),
             currency=random.choice(DEFAULT_CURRENCIES),
             venue=random.choice(DEFAULT_VENUES),
+            version=version,
+            maturity_date=maturity_date,
+            status=status,
+            rejection_reason=None,
+            source_file="synthetic_trades.csv",
+            load_ts=load_ts,
         )
         yield trade
 
 
 def write_csv(trades: Iterable[Trade], output_file: Path) -> None:
-    fieldnames = ["trade_id", "timestamp", "symbol", "side", "quantity", "price", "currency", "venue"]
+    fieldnames = [
+        "trade_id",
+        "timestamp",
+        "symbol",
+        "side",
+        "quantity",
+        "price",
+        "currency",
+        "venue",
+        "version",
+        "maturity_date",
+        "status",
+        "rejection_reason",
+        "source_file",
+        "load_ts",
+    ]
     with output_file.open("w", encoding="utf-8", newline="") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -139,7 +171,22 @@ def write_json(trades: Iterable[Trade], output_file: Path) -> None:
 
 
 def print_csv(trades: Iterable[Trade]) -> None:
-    fieldnames = ["trade_id", "timestamp", "symbol", "side", "quantity", "price", "currency", "venue"]
+    fieldnames = [
+        "trade_id",
+        "timestamp",
+        "symbol",
+        "side",
+        "quantity",
+        "price",
+        "currency",
+        "venue",
+        "version",
+        "maturity_date",
+        "status",
+        "rejection_reason",
+        "source_file",
+        "load_ts",
+    ]
     writer = csv.DictWriter(
         f=__import__("sys").stdout,
         fieldnames=fieldnames,
