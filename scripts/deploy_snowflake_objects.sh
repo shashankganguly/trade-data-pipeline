@@ -45,6 +45,6 @@ echo "Loading trade data into Snowflake..."
 $PYTHON_COMMAND "$SNOWFLAKE_LOADER" \
   --file "$GENERATION_FILE" \
   --format csv \
-  --table YOUR_SCHEMA.YOUR_TABLE
+  --table PUBLIC.raw_trades
 
 echo "Deployment completed."
