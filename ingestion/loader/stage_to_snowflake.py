@@ -10,10 +10,15 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import snowflake.connector
 from snowflake.connector import SnowflakeConnection
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,6 +41,12 @@ def parse_args() -> argparse.Namespace:
         choices=["csv", "json"],
         default="csv",
         help="File format of the source trade file.",
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path(__file__).resolve().parents[2] / "config" / "snowflake_config.yml",
+        help="Path to the Snowflake YAML config file.",
     )
     parser.add_argument(
         "--account",
@@ -92,16 +103,58 @@ def configure_logging(debug: bool) -> None:
     )
 
 
-def get_snowflake_connection(args: argparse.Namespace) -> SnowflakeConnection:
+def load_snowflake_config(config_path: Path) -> Dict[str, Any]:
+    """Load the YAML Snowflake contract for connection defaults.
+
+    The loader only reads the ``snowflake`` node from the config file. Explicit
+    command-line arguments remain the highest priority input; environment
+    variables are an intermediate fallback source.
+    """
+    if not config_path:
+        return {}
+
+    if not config_path.exists():
+        logging.warning("Snowflake config file not found at %s; continuing with CLI/env defaults.", config_path)
+        return {}
+
+    if yaml is None:
+        raise RuntimeError(
+            "PyYAML is required to read the Snowflake config file. Install it with `pip install pyyaml`."
+        )
+
+    with config_path.open("r", encoding="utf-8") as handle:
+        payload = yaml.safe_load(handle) or {}
+
+    snowflake_config = payload.get("snowflake") or {}
+    return snowflake_config if isinstance(snowflake_config, dict) else {}
+
+
+def resolve_connection_parameters(args: argparse.Namespace) -> Dict[str, Optional[str]]:
+    config_dict = load_snowflake_config(args.config)
+
+    config_account = config_dict.get("account")
+    config_user = config_dict.get("user")
+    config_password = config_dict.get("password")
+    config_role = config_dict.get("role")
+    config_warehouse = config_dict.get("warehouse")
+    config_database = config_dict.get("database")
+    config_schema = config_dict.get("schema")
+
     connection_parameters: Dict[str, Optional[str]] = {
-        "account": args.account or os.getenv("SNOWFLAKE_ACCOUNT"),
-        "user": args.user or os.getenv("SNOWFLAKE_USER"),
-        "password": args.password or os.getenv("SNOWFLAKE_PASSWORD"),
-        "role": args.role or os.getenv("SNOWFLAKE_ROLE"),
-        "warehouse": args.warehouse or os.getenv("SNOWFLAKE_WAREHOUSE"),
-        "database": args.database or os.getenv("SNOWFLAKE_DATABASE"),
-        "schema": args.schema or os.getenv("SNOWFLAKE_SCHEMA"),
+        "account": args.account or os.getenv("SNOWFLAKE_ACCOUNT") or config_account,
+        "user": args.user or os.getenv("SNOWFLAKE_USER") or config_user,
+        "password": args.password or os.getenv("SNOWFLAKE_PASSWORD") or config_password,
+        "role": args.role or os.getenv("SNOWFLAKE_ROLE") or config_role,
+        "warehouse": args.warehouse or os.getenv("SNOWFLAKE_WAREHOUSE") or config_warehouse,
+        "database": args.database or os.getenv("SNOWFLAKE_DATABASE") or config_database,
+        "schema": args.schema or os.getenv("SNOWFLAKE_SCHEMA") or config_schema,
     }
+
+    return connection_parameters
+
+
+def get_snowflake_connection(args: argparse.Namespace) -> SnowflakeConnection:
+    connection_parameters = resolve_connection_parameters(args)
     missing = [key for key, value in connection_parameters.items() if key in ["account", "user", "password"] and not value]
     if missing:
         raise ValueError(

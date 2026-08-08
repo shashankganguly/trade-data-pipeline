@@ -6,11 +6,195 @@ sources:
     schema: public
     tables:
       - name: raw_trades
+        description: "Incoming raw trade feed landing in Snowflake."
+        columns:
+          - name: trade_id
+            description: "Natural business key for a trade."
+            tests:
+              - not_null
+          - name: timestamp
+            description: "Trade execution timestamp."
+            tests:
+              - not_null
+          - name: symbol
+            description: "Instrument ticker."
+            tests:
+              - not_null
+          - name: side
+            description: "Trade side from the incoming feed."
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["BUY", "SELL"]
+          - name: quantity
+            description: "Trade quantity."
+            tests:
+              - not_null
+          - name: price
+            description: "Trade execution price."
+            tests:
+              - not_null
+          - name: currency
+            description: "Trade currency code."
+            tests:
+              - not_null
+          - name: venue
+            description: "Execution venue or market identifier."
+            tests:
+              - not_null
+          - name: version
+            description: "Trade version number in the source record."
+            tests:
+              - not_null
+          - name: maturity_date
+            description: "Contract maturity date."
+            tests:
+              - not_null
+          - name: status
+            description: "Raw trade status, when present."
+            tests:
+              - not_null
+          - name: source_file
+            description: "Name of the source file that loaded the record."
+            tests:
+              - not_null
+          - name: load_ts
+            description: "Snowflake ingestion timestamp."
+            tests:
+              - not_null
 
 models:
   - name: stg_raw_trades
     description: "Staging model for raw trade records loaded from Snowflake."
+    columns:
+      - name: trade_id
+        tests:
+          - not_null
+      - name: timestamp
+        tests:
+          - not_null
+      - name: symbol
+        tests:
+          - not_null
+      - name: side
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["BUY", "SELL"]
+      - name: quantity
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: currency
+        tests:
+          - not_null
+      - name: venue
+        tests:
+          - not_null
+      - name: version
+        tests:
+          - not_null
+      - name: maturity_date
+        tests:
+          - not_null
+      - name: load_ts
+        tests:
+          - not_null
+
   - name: valid_trades
     description: "Validated trade records with status and latest version selection."
+    columns:
+      - name: trade_id
+        tests:
+          - not_null
+      - name: timestamp
+        tests:
+          - not_null
+      - name: symbol
+        tests:
+          - not_null
+      - name: side
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["BUY", "SELL"]
+      - name: quantity
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: currency
+        tests:
+          - not_null
+      - name: venue
+        tests:
+          - not_null
+      - name: version
+        tests:
+          - not_null
+      - name: maturity_date
+        tests:
+          - not_null
+      - name: status
+        description: "The status assigned to the surviving business-valid record."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["ACTIVE", "EXPIRED"]
+      - name: source_file
+        tests:
+          - not_null
+      - name: load_ts
+        tests:
+          - not_null
+
   - name: rejected_trades
     description: "Rejected trade records with rejection reasons."
+    columns:
+      - name: trade_id
+        tests:
+          - not_null
+      - name: timestamp
+        tests:
+          - not_null
+      - name: symbol
+        tests:
+          - not_null
+      - name: side
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["BUY", "SELL"]
+      - name: quantity
+        tests:
+          - not_null
+      - name: price
+        tests:
+          - not_null
+      - name: currency
+        tests:
+          - not_null
+      - name: venue
+        tests:
+          - not_null
+      - name: version
+        tests:
+          - not_null
+      - name: maturity_date
+        tests:
+          - not_null
+      - name: rejection_reason
+        description: "Failure classification assigned by dbt selection logic."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["LOWER_VERSION_THAN_EXISTING", "MATURITY_DATE_EARLIER_THAN_LOAD_DATE", "REPLACED_BY_SAME_VERSION", "UNKNOWN_REJECTION_REASON"]
+      - name: source_file
+        tests:
+          - not_null
+      - name: load_ts
+        tests:
+          - not_null

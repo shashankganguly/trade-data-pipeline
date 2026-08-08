@@ -1,3 +1,4 @@
+import argparse
 import csv
 import importlib.util
 from pathlib import Path
@@ -5,10 +6,15 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT_DIR / "ingestion" / "trade_generator" / "generate_trades.py"
+LOADER_PATH = ROOT_DIR / "ingestion" / "loader" / "stage_to_snowflake.py"
 
 spec = importlib.util.spec_from_file_location("generate_trades", MODULE_PATH)
 generate_trades = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(generate_trades)
+
+loader_spec = importlib.util.spec_from_file_location("stage_to_snowflake", LOADER_PATH)
+stage_to_snowflake = importlib.util.module_from_spec(loader_spec)
+loader_spec.loader.exec_module(stage_to_snowflake)
 
 
 def test_generate_trades_count_and_fields():
@@ -78,4 +84,63 @@ def test_write_csv_creates_header_and_rows(tmp_path):
         "load_ts",
     ]
     assert rows[0]["symbol"] == "CSV"
+
+
+def test_snowflake_config_defaults_and_cli_override(tmp_path):
+    config_path = tmp_path / "snowflake_config.yml"
+    config_path.write_text(
+        """
+snowflake:
+  account: cfg_account
+  user: cfg_user
+  password: cfg_password
+  role: cfg_role
+  warehouse: cfg_warehouse
+  database: cfg_database
+  schema: cfg_schema
+""",
+        encoding="utf-8",
+    )
+
+    args = argparse.Namespace(
+        config=config_path,
+        account=None,
+        user=None,
+        password=None,
+        role=None,
+        warehouse=None,
+        database=None,
+        schema=None,
+    )
+
+    resolved = stage_to_snowflake.resolve_connection_parameters(args)
+
+    assert resolved["account"] == "cfg_account"
+    assert resolved["user"] == "cfg_user"
+    assert resolved["password"] == "cfg_password"
+    assert resolved["role"] == "cfg_role"
+    assert resolved["warehouse"] == "cfg_warehouse"
+    assert resolved["database"] == "cfg_database"
+    assert resolved["schema"] == "cfg_schema"
+
+    override_args = argparse.Namespace(
+        config=config_path,
+        account="cli_account",
+        user="cli_user",
+        password="cli_password",
+        role="cli_role",
+        warehouse="cli_wh",
+        database="cli_db",
+        schema="cli_schema",
+    )
+
+    override_resolved = stage_to_snowflake.resolve_connection_parameters(override_args)
+
+    assert override_resolved["account"] == "cli_account"
+    assert override_resolved["user"] == "cli_user"
+    assert override_resolved["password"] == "cli_password"
+    assert override_resolved["role"] == "cli_role"
+    assert override_resolved["warehouse"] == "cli_wh"
+    assert override_resolved["database"] == "cli_db"
+    assert override_resolved["schema"] == "cli_schema"
 

@@ -1,0 +1,42 @@
+# Snowflake connection and warehouse configuration for the trade-data-pipeline.
+# Fill these placeholders with the values from your own Snowflake account.
+# Do not commit real credentials. Prefer environment substitution or a secret vault.
+
+snowflake:
+  account: "<your_account_identifier>"
+  user: "<your_snowflake_user>"
+  password: "<your_snowflake_password>"
+  role: "<your_role>"
+  warehouse: "<your_warehouse>"
+  database: "<your_database>"
+  schema: "<your_schema>"
+  authenticator: "<optional_authenticator>"
+  private_key_file: "<optional_private_key_file_path>"
+  private_key_passphrase: "<optional_private_key_passphrase>"
+  warehouse_size: "<optional_warehouse_size>"
+  client_session_keep_alive: false
+
+pipeline:
+  raw_table: "RAW_TRADES"
+  valid_table: "VALID_TRADES"
+  rejected_table: "REJECTED_TRADES"
+  staging_table: "RAW_TRADES"
+  file_format: "csv"
+  on_error: "abort_statement"
+  purge: false
+
+# The dbt project is rooted under snowflake/dbt and reads the profile name
+# declared in dbt_project.yml. The profile setup itself usually expects these
+# same Snowflake settings, plus an optional target name.
+dbt:
+  profile_name: "trade_data_pipeline"
+  target_name: "dev"
+  target:
+    account: "<same_as_snowflake_account>"
+    user: "<same_as_snowflake_user>"
+    password: "<same_as_snowflake_password>"
+    role: "<same_as_role>"
+    warehouse: "<same_as_warehouse>"
+    database: "<same_as_database>"
+    schema: "<same_as_schema>"
+    threads: 1

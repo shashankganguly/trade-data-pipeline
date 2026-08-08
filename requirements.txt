@@ -1,0 +1,6 @@
+pytest
+PyYAML
+snowflake-connector-python
+snowflake-sqlalchemy
+# dbt-snowflake must be compatible with the dbt version selected in CI/CD.
+dbt-snowflake
