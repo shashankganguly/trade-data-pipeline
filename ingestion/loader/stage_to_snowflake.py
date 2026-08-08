@@ -129,28 +129,25 @@ def load_snowflake_config(config_path: Path) -> Dict[str, Any]:
     return snowflake_config if isinstance(snowflake_config, dict) else {}
 
 
-def resolve_connection_parameters(args: argparse.Namespace) -> Dict[str, Optional[str]]:
-    config_dict = load_snowflake_config(args.config)
-
-    config_account = config_dict.get("account")
-    config_user = config_dict.get("user")
-    config_password = config_dict.get("password")
-    config_role = config_dict.get("role")
-    config_warehouse = config_dict.get("warehouse")
-    config_database = config_dict.get("database")
-    config_schema = config_dict.get("schema")
-
-    connection_parameters: Dict[str, Optional[str]] = {
-        "account": args.account or os.getenv("SNOWFLAKE_ACCOUNT") or config_account,
-        "user": args.user or os.getenv("SNOWFLAKE_USER") or config_user,
-        "password": args.password or os.getenv("SNOWFLAKE_PASSWORD") or config_password,
-        "role": args.role or os.getenv("SNOWFLAKE_ROLE") or config_role,
-        "warehouse": args.warehouse or os.getenv("SNOWFLAKE_WAREHOUSE") or config_warehouse,
-        "database": args.database or os.getenv("SNOWFLAKE_DATABASE") or config_database,
-        "schema": args.schema or os.getenv("SNOWFLAKE_SCHEMA") or config_schema,
+def resolve_connection_parameters(args):
+    # Load config file
+    with open(args.config, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    snowflake_config = config.get('snowflake', {})
+    
+    # Use CLI args if provided, otherwise use config file values (don't mask config values)
+    resolved = {
+        'account': args.account or snowflake_config.get('account'),
+        'user': args.user or snowflake_config.get('user'),
+        'password': args.password or snowflake_config.get('password'),
+        'role': args.role or snowflake_config.get('role'),
+        'warehouse': args.warehouse or snowflake_config.get('warehouse'),
+        'database': args.database or snowflake_config.get('database'),
+        'schema': args.schema or snowflake_config.get('schema'),
     }
-
-    return connection_parameters
+    
+    return resolved
 
 
 def get_snowflake_connection(args: argparse.Namespace) -> SnowflakeConnection:
