@@ -109,7 +109,8 @@ snowflake:
         schema=None,
     )
 
-    resolved = stage_to_snowflake.resolve_connection_parameters(args)
+    # resolved = stage_to_snowflake.resolve_connection_parameters(args)
+    resolved = resolve_connection_parameters(args)
 
     assert resolved["account"] == "cfg_account"
     assert resolved["user"] == "cfg_user"
@@ -130,7 +131,8 @@ snowflake:
         schema="cli_schema",
     )
 
-    override_resolved = stage_to_snowflake.resolve_connection_parameters(override_args)
+    # override_resolved = stage_to_snowflake.resolve_connection_parameters(override_args)
+    override_resolved = resolve_connection_parameters(override_args)
 
     assert override_resolved["account"] == "cli_account"
     assert override_resolved["user"] == "cli_user"
