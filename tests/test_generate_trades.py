@@ -1,10 +1,16 @@
+from trade_generator import generate_trades
+from loader import stage_to_snowflake
 import argparse
 import csv
-import importlib.util
+import sys
 from pathlib import Path
 
-
+# Add ingestion module to path
 ROOT_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT_DIR / "ingestion"))
+
+
+# ROOT_DIR = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT_DIR / "ingestion" / "trade_generator" / "generate_trades.py"
 LOADER_PATH = ROOT_DIR / "ingestion" / "loader" / "stage_to_snowflake.py"
 
