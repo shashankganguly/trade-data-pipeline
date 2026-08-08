@@ -82,6 +82,37 @@ def test_write_csv_creates_header_and_rows(tmp_path):
     assert rows[0]["symbol"] == "CSV"
 
 
+def test_resolve_connection_parameters_reads_gitHub_secret_env_vars(monkeypatch):
+    monkeypatch.setenv("SNOWFLAKE_ACCOUNT", "env_account")
+    monkeypatch.setenv("SNOWFLAKE_USER", "env_user")
+    monkeypatch.setenv("SNOWFLAKE_PASSWORD", "env_password")
+    monkeypatch.setenv("SNOWFLAKE_ROLE", "env_role")
+    monkeypatch.setenv("SNOWFLAKE_WAREHOUSE", "env_wh")
+    monkeypatch.setenv("SNOWFLAKE_DATABASE", "env_db")
+    monkeypatch.setenv("SNOWFLAKE_SCHEMA", "env_schema")
+
+    args = argparse.Namespace(
+        config=Path("does_not_exist.yml"),
+        account=None,
+        user=None,
+        password=None,
+        role=None,
+        warehouse=None,
+        database=None,
+        schema=None,
+    )
+
+    resolved = resolve_connection_parameters(args)
+
+    assert resolved["account"] == "env_account"
+    assert resolved["user"] == "env_user"
+    assert resolved["password"] == "env_password"
+    assert resolved["role"] == "env_role"
+    assert resolved["warehouse"] == "env_wh"
+    assert resolved["database"] == "env_db"
+    assert resolved["schema"] == "env_schema"
+
+
 def test_snowflake_config_defaults_and_cli_override(tmp_path):
     config_path = tmp_path / "snowflake_config.yml"
     config_path.write_text(

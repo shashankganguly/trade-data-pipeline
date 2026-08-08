@@ -130,23 +130,58 @@ def load_snowflake_config(config_path: Path) -> Dict[str, Any]:
 
 
 def resolve_connection_parameters(args):
-    # Load config file
-    with open(args.config, 'r') as f:
-        config = yaml.safe_load(f)
-    
-    snowflake_config = config.get('snowflake', {})
-    
-    # Use CLI args if provided, otherwise use config file values (don't mask config values)
-    resolved = {
-        'account': args.account or snowflake_config.get('account'),
-        'user': args.user or snowflake_config.get('user'),
-        'password': args.password or snowflake_config.get('password'),
-        'role': args.role or snowflake_config.get('role'),
-        'warehouse': args.warehouse or snowflake_config.get('warehouse'),
-        'database': args.database or snowflake_config.get('database'),
-        'schema': args.schema or snowflake_config.get('schema'),
+    """Resolve Snowflake connection parameters from the highest-priority source.
+
+    For GitHub Actions or other CI environments, Snowflake credentials are exposed
+    as environment variables. That is the repository-secret contract expected by
+    the dbt profile as well. This resolver supports the same environment variable
+    names for the loader script so the same secrets can back both dbt and the
+    Snowflake connector.
+
+    Resolution order:
+      1. CLI arguments (explicit control)
+      2. Environment variables inherited by the runtime (GitHub Actions secrets)
+      3. YAML config defaults
+
+    This keeps the existing config-based local dev flow intact, but makes the
+    repository compatible with secret-based CI/CD deployments.
+    """
+    # 1. Build credential sources from environment variables.
+    env_secrets = {
+        'account': os.getenv('SNOWFLAKE_ACCOUNT'),
+        'user': os.getenv('SNOWFLAKE_USER'),
+        'password': os.getenv('SNOWFLAKE_PASSWORD'),
+        'role': os.getenv('SNOWFLAKE_ROLE'),
+        'warehouse': os.getenv('SNOWFLAKE_WAREHOUSE'),
+        'database': os.getenv('SNOWFLAKE_DATABASE'),
+        'schema': os.getenv('SNOWFLAKE_SCHEMA'),
     }
-    
+
+    # 2. Load config file values when available.
+    config = {}
+    if args.config and Path(args.config).exists():
+        if yaml is None:
+            raise RuntimeError(
+                "PyYAML is required to read the Snowflake config file. Install it with `pip install pyyaml`."
+            )
+
+        with Path(args.config).open('r', encoding='utf-8') as handle:
+            payload = yaml.safe_load(handle) or {}
+
+        snowflake_config = payload.get('snowflake') or {}
+        config = snowflake_config if isinstance(snowflake_config, dict) else {}
+
+    # 3. Merge with the precedence rules.
+    resolved = {
+        'account': args.account or env_secrets.get('account') or config.get('account'),
+        'user': args.user or env_secrets.get('user') or config.get('user'),
+        'password': args.password or env_secrets.get('password') or config.get('password'),
+        'role': args.role or env_secrets.get('role') or config.get('role'),
+        'warehouse': args.warehouse or env_secrets.get('warehouse') or config.get('warehouse'),
+        'database': args.database or env_secrets.get('database') or config.get('database'),
+        'schema': args.schema or env_secrets.get('schema') or config.get('schema'),
+    }
+
     return resolved
 
 
