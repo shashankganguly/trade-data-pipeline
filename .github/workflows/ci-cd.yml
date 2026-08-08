@@ -37,13 +37,6 @@ jobs:
         run: |
           python -m pytest tests/test_generate_trades.py -q
 
-      - name: Install dbt dependencies
-        run: |
-          dbt deps --project-dir snowflake/dbt
-
-      - name: Run dbt build
-        run: |
-          dbt build --project-dir snowflake/dbt --profiles-dir snowflake/dbt
 
   deploy:
     name: Deploy Snowflake runtime artifacts
