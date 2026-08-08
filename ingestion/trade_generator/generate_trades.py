@@ -4,8 +4,6 @@ This script produces a configurable number of simulated trade records and writes
 CSV payloads for Snowflake ingestion.
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import random

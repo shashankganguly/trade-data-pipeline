@@ -4,7 +4,6 @@ This script connects to Snowflake, uploads a local file into the table stage,
 and loads it into the target table using COPY INTO.
 """
 
-from __future__ import annotations
 
 import argparse
 import logging
@@ -104,12 +103,6 @@ def configure_logging(debug: bool) -> None:
 
 
 def load_snowflake_config(config_path: Path) -> Dict[str, Any]:
-    """Load the YAML Snowflake contract for connection defaults.
-
-    The loader only reads the ``snowflake`` node from the config file. Explicit
-    command-line arguments remain the highest priority input; environment
-    variables are an intermediate fallback source.
-    """
     if not config_path:
         return {}
 
@@ -130,22 +123,6 @@ def load_snowflake_config(config_path: Path) -> Dict[str, Any]:
 
 
 def resolve_connection_parameters(args):
-    """Resolve Snowflake connection parameters from the highest-priority source.
-
-    For GitHub Actions or other CI environments, Snowflake credentials are exposed
-    as environment variables. That is the repository-secret contract expected by
-    the dbt profile as well. This resolver supports the same environment variable
-    names for the loader script so the same secrets can back both dbt and the
-    Snowflake connector.
-
-    Resolution order:
-      1. CLI arguments (explicit control)
-      2. Environment variables inherited by the runtime (GitHub Actions secrets)
-      3. YAML config defaults
-
-    This keeps the existing config-based local dev flow intact, but makes the
-    repository compatible with secret-based CI/CD deployments.
-    """
     # 1. Build credential sources from environment variables.
     env_secrets = {
         'account': os.getenv('SNOWFLAKE_ACCOUNT'),
