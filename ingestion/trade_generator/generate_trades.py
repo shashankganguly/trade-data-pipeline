@@ -91,6 +91,13 @@ def parse_args() -> argparse.Namespace:
         default=1000.0,
         help="Maximum trade price.",
     )
+    parser.add_argument(
+        "--format",
+        type=str,
+        default="csv",
+        choices=["csv"],
+        help="Output format for generated trades.",
+    )
     return parser.parse_args()
 
 
