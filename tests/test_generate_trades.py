@@ -6,19 +6,12 @@ from pathlib import Path
 
 # Add ingestion module to path
 ROOT_DIR = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT_DIR / "ingestion"))
+sys.path.insert(0, str(ROOT_DIR / "ingestion" / "trade_generator"))
+sys.path.insert(0, str(ROOT_DIR / "ingestion" / "loader"))
 
-# ROOT_DIR = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT_DIR / "ingestion" / "trade_generator" / "generate_trades.py"
-LOADER_PATH = ROOT_DIR / "ingestion" / "loader" / "stage_to_snowflake.py"
-
-spec = importlib.util.spec_from_file_location("generate_trades", MODULE_PATH)
-generate_trades = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(generate_trades)
-
-loader_spec = importlib.util.spec_from_file_location("stage_to_snowflake", LOADER_PATH)
-stage_to_snowflake = importlib.util.module_from_spec(loader_spec)
-loader_spec.exec_module(stage_to_snowflake)
+# Import directly instead of using spec_from_file_location
+import generate_trades
+from stage_to_snowflake import resolve_connection_parameters
 
 def test_generate_trades_count_and_fields():
     trades = list(
