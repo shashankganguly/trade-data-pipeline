@@ -1,14 +1,12 @@
-from trade_generator import generate_trades
-from loader import stage_to_snowflake
 import argparse
 import csv
 import sys
+import importlib.util
 from pathlib import Path
 
 # Add ingestion module to path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR / "ingestion"))
-
 
 # ROOT_DIR = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT_DIR / "ingestion" / "trade_generator" / "generate_trades.py"
@@ -20,8 +18,7 @@ spec.loader.exec_module(generate_trades)
 
 loader_spec = importlib.util.spec_from_file_location("stage_to_snowflake", LOADER_PATH)
 stage_to_snowflake = importlib.util.module_from_spec(loader_spec)
-loader_spec.loader.exec_module(stage_to_snowflake)
-
+loader_spec.exec_module(stage_to_snowflake)
 
 def test_generate_trades_count_and_fields():
     trades = list(
